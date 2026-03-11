@@ -5,8 +5,8 @@ services:
     image: bryangerlach/rdgen:latest
     restart: unless-stopped
     environment:
-      SECRET_KEY: "django-insecure-!(t-!f#6g#sr%yfded9(xha)g+=!6craeez^cp+*&bz_7vdk61"
-      GHUSER: "github_username"
+      SECRET_KEY: "c3f963abb96f42981d234f3f6790ba07f290755a4af8fa002ad820f3dafec0c9dbd5f9e1208da3b3a746861a6673ce83f85997f1756ab8bab28df42d56633383909588bcc552d4052576877573d2dbec257690303fcd96f908ecaade841d8bf10aa86437"
+      GHUSER: "khat17"
       GHBEARER: "github_access_token"
       GENURL: "accessible_url_of_server"
       ZIP_PASSWORD: ""
