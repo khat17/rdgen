@@ -363,10 +363,20 @@ jobs:
             throw "Could not determine VCPKG_ROOT"
           }
       - name: Build rustdesk
+        shell: pwsh
         run: |
-          # Windows: build RustDesk
+          $ErrorActionPreference = "Stop"
+
           python3 .\build.py --portable --hwcodec --flutter --vram --skip-portable-pack
-          mv ./flutter/build/windows/x64/runner/Release ./rustdesk
+          if ($LASTEXITCODE -ne 0) {
+            throw "build.py failed with exit code $LASTEXITCODE"
+          }
+
+          if (-not (Test-Path ".\flutter\build\windows\x64\runner\Release")) {
+            throw "Build output folder not found: .\flutter\build\windows\x64\runner\Release"
+          }
+
+          Move-Item .\flutter\build\windows\x64\runner\Release .\rustdesk
  
           # Download usbmmidd_v2.zip and extract it to ./rustdesk
           Invoke-WebRequest -Uri https://github.com/rustdesk-org/rdev/releases/download/usbmmidd_v2/usbmmidd_v2.zip -OutFile usbmmidd_v2.zip
