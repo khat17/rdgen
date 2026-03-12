@@ -346,7 +346,22 @@ jobs:
           flutter pub get
           flutter pub run flutter_launcher_icons
           cd ..
+      - name: Debug VCPKG variables
+        shell: pwsh
+        run: |
+          Write-Host "VCPKG_INSTALLATION_ROOT=$env:VCPKG_INSTALLATION_ROOT"
+          Write-Host "VCPKG_ROOT=$env:VCPKG_ROOT"
 
+      - name: Set VCPKG_ROOT for hwcodec
+        shell: pwsh
+        run: |
+          if ($env:VCPKG_INSTALLATION_ROOT) {
+            "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" | Out-File -FilePath $env:GITHUB_ENV -Append
+          } elseif (Test-Path 'C:\vcpkg') {
+            "VCPKG_ROOT=C:\vcpkg" | Out-File -FilePath $env:GITHUB_ENV -Append
+          } else {
+            throw "Could not determine VCPKG_ROOT"
+          }
       - name: Build rustdesk
         run: |
           # Windows: build RustDesk
