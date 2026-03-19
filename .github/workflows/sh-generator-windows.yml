@@ -156,7 +156,7 @@ jobs:
       - name: change appname to custom
         if: env.appname != 'rustdesk'
         continue-on-error: true
-        shell: bash
+        shell: powershell
         run: |
           # ./Cargo.toml
           sed -i -e 's|description = "RustDesk Remote Desktop"|description = "${{ env.appname }}"|' ./Cargo.toml
@@ -186,7 +186,7 @@ jobs:
       - name: fix registry if appname has a space
         if: contains(env.appname, ' ')
         continue-on-error: true
-        shell: bash
+        shell: powershell
         run: |
           #./src/platform/windows.rs
           sed -i -e 's|reg add {}|reg add \\\"{}\\\"|' ./src/platform/windows.rs
@@ -206,7 +206,7 @@ jobs:
       - name: change company name
         if: env.compname != 'Purslane Ltd'
         continue-on-error: true
-        shell: bash
+        shell: powershell
         run: |
           sed -i -e 's|Purslane Ltd|${{ env.compname }}|' ./flutter/lib/desktop/pages/desktop_setting_page.dart
           sed -i -e 's|PURSLANE|${{ env.compname }}|' ./res/msi/preprocess.py
@@ -220,7 +220,7 @@ jobs:
       - name: change url to custom
         if: env.urlLink != 'https://rustdesk.com'
         continue-on-error: true
-        shell: bash
+        shell: powershell
         run: |
           sed -i -e 's|Homepage: https://rustdesk.com|Homepage: ${{ env.urlLink }}|' ./build.py
           sed -i -e "s|launchUrl(Uri.parse('https://rustdesk.com'));|launchUrl(Uri.parse('${{ env.urlLink }}'));|" ./flutter/lib/common.dart
@@ -234,7 +234,7 @@ jobs:
       - name: change download link to custom
         if: env.downloadLink != 'https://rustdesk.com/download'
         continue-on-error: true
-        shell: bash
+        shell: powershell
         run: |
           sed -i -e 's|https://rustdesk.com/download|${{ env.downloadLink }}|' ./flutter/lib/desktop/pages/desktop_home_page.dart
           sed -i -e 's|https://rustdesk.com/download|${{ env.downloadLink }}|' ./flutter/lib/mobile/pages/connection_page.dart
@@ -242,7 +242,7 @@ jobs:
 
       - name: set server, key, and apiserver
         continue-on-error: true
-        shell: bash
+        shell: powershell
         run: |
           sed -i -e 's|rs-ny.rustdesk.com|${{ env.server }}|' ./libs/hbb_common/src/config.rs
           sed -i -e 's|OeVuKk5nlHiXp+APNn0Y3pC1Iwpwn44JGqrQCsWqmBw=|${{ env.key }}|' ./libs/hbb_common/src/config.rs
@@ -291,7 +291,7 @@ jobs:
       - name: ui.rs icon
         if: ${{ env.iconlink_url != 'false' }}
         continue-on-error: true
-        shell: bash
+        shell: powershell
         run: |
           cp ./src/ui.rs ./src/ui.rs.bak
           b64=$(base64 -w0 < ./res/icon.png)
@@ -301,7 +301,7 @@ jobs:
       - name: fix connection delay
         continue-on-error: true
         if: ${{ env.delayFix == 'true' }}
-        shell: bash
+        shell: powershell
         run: |
           sed -i -e 's|!key.is_empty()|false|' ./src/client.rs
 
@@ -332,7 +332,7 @@ jobs:
       - name: removeNewVersionNotif
         continue-on-error: true
         if: env.removeNewVersionNotif == 'true'
-        shell: bash
+        shell: powershell
         run: | 
           sed -i -e 's|updateUrl.isNotEmpty|false|' ./flutter/lib/desktop/pages/desktop_home_page.dart
           sed -i '/let (request, url) =/,/Ok(())/{/Ok(())/!d}' ./src/common.rs
@@ -434,7 +434,7 @@ jobs:
         # Windows: find Runner.res (compiled from ./flutter/windows/runner/Runner.rc), copy to ./Runner.res
         # Runner.rc does not contain actual version, but Runner.res does
         continue-on-error: true
-        shell: bash
+        shell: powershell
         run: |
           runner_res=$(find . -name "Runner.res");
           if [ "$runner_res" == "" ]; then
@@ -461,7 +461,7 @@ jobs:
 
       - name: sign dlls
         continue-on-error: true
-        shell: bash
+        shell: powershell
         run: |
           if [ ! -z "${{ secrets.SIGN_BASE_URL }}" ] && [ ! -z "${{ secrets.SIGN_API_KEY }}" ]; then
             curl -X POST -F "file=@./rustdesk/unsigned_files.zip" \
@@ -482,12 +482,12 @@ jobs:
           Remove-Item ./rustdesk/signed_files.zip
 
       - name: Create custom.txt file
-        shell: bash
+        shell: powershell
         run: |
           echo -n "${{ env.custom }}" | cat > ./rustdesk/custom_.txt
 
       - name: Build self-extracted executable
-        shell: bash
+        shell: powershell
         if: env.UPLOAD_ARTIFACT == 'true'
         run: |
           mv "./rustdesk/rustdesk.exe" "./rustdesk/${{ env.appname }}.exe" || echo "rustdesk.exe"
@@ -524,7 +524,7 @@ jobs:
 
       - name: sign exe and msi
         continue-on-error: true
-        shell: bash
+        shell: powershell
         run: |
           if [ ! -z "${{ secrets.SIGN_BASE_URL }}" ] && [ ! -z "${{ secrets.SIGN_API_KEY }}" ]; then
             curl -X POST -F "file=@./SignOutput/unsigned_files.zip" \
@@ -559,7 +559,7 @@ jobs:
         with:
           timeout_minutes: 1
           max_attempts: 3
-          shell: bash
+          shell: powershell
           command: |
             curl -i -X POST -H "Content-Type: multipart/form-data" -H "Authorization: Bearer ${{ env.token }}" -F "file=@./SignOutput/${{ env.filename }}.exe" -F "uuid=${{ env.uuid }}" ${{ secrets.GENURL }}/save_custom_client
             curl -i -X POST -H "Content-Type: multipart/form-data" -H "Authorization: Bearer ${{ env.token }}" -F "file=@./SignOutput/${{ env.filename }}.msi" -F "uuid=${{ env.uuid }}" ${{ secrets.GENURL }}/save_custom_client || true
@@ -570,7 +570,7 @@ jobs:
         with:
           timeout_minutes: 1
           max_attempts: 3
-          shell: bash
+          shell: powershell
           command: |
             curl -i -X POST -H "Content-Type: multipart/form-data" -H "Authorization: Bearer ${{ env.token }}" -F "file=@./SignOutput/${{ env.filename }}.exe" ${{ env.apiServer }}/api/save_custom_client
             curl -i -X POST -H "Content-Type: multipart/form-data" -H "Authorization: Bearer ${{ env.token }}" -F "file=@./SignOutput/${{ env.filename }}.msi" ${{ env.apiServer }}/api/save_custom_client || true
