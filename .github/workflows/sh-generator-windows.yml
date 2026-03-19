@@ -138,7 +138,7 @@ jobs:
           submodules: recursive
 
       - name: Restore bridge files
-        uses: actions/download-artifact@master
+        uses: actions/download-artifact@v4
         with:
           name: bridge-artifact
           path: ./
@@ -208,60 +208,94 @@ jobs:
         continue-on-error: true
         shell: powershell
         run: |
-          sed -i -e 's|Purslane Ltd|${{ env.compname }}|' ./flutter/lib/desktop/pages/desktop_setting_page.dart
-          sed -i -e 's|PURSLANE|${{ env.compname }}|' ./res/msi/preprocess.py
-          sed -i -e 's|Purslane Ltd|${{ env.compname }}|' ./res/msi/preprocess.py
-          sed -i -e 's|"Copyright © 2025 Purslane Ltd. All rights reserved."|"Copyright © 2025 ${{ env.compname }}. All rights reserved."|' ./flutter/windows/runner/Runner.rc
-          sed -i -e 's|Purslane Ltd|${{ env.compname }}|' ./flutter/windows/runner/Runner.rc
-          sed -i -e 's|Purslane Ltd|${{ env.compname }}|' ./Cargo.toml
-          sed -i -e 's|Purslane Ltd|${{ env.compname }}|' ./libs/portable/Cargo.toml
-          sed -i -e 's|Purslane Ltd|${{ env.compname }}|' ./res/msi/Package/License.rtf
+          $files = @(
+            './flutter/lib/desktop/pages/desktop_setting_page.dart',
+            './res/msi/preprocess.py',
+            './flutter/windows/runner/Runner.rc',
+            './Cargo.toml',
+            './libs/portable/Cargo.toml',
+            './res/msi/Package/License.rtf'
+          )
+          foreach ($file in $files) {
+            if (Test-Path $file) {
+              $content = Get-Content $file -Raw
+              $content = $content.Replace('Purslane Ltd','${{ env.compname }}')
+              $content = $content.Replace('PURSLANE','${{ env.compname }}')
+              $content = $content.Replace('Copyright © 2025 Purslane Ltd. All rights reserved.','Copyright © 2025 ${{ env.compname }}. All rights reserved.')
+              Set-Content -Path $file -Value $content
+            }
+          }
              
       - name: change url to custom
         if: env.urlLink != 'https://rustdesk.com'
         continue-on-error: true
         shell: powershell
         run: |
-          sed -i -e 's|Homepage: https://rustdesk.com|Homepage: ${{ env.urlLink }}|' ./build.py
-          sed -i -e "s|launchUrl(Uri.parse('https://rustdesk.com'));|launchUrl(Uri.parse('${{ env.urlLink }}'));|" ./flutter/lib/common.dart
-          sed -i -e "s|launchUrlString('https://rustdesk.com');|launchUrlString('${{ env.urlLink }}');|" ./flutter/lib/desktop/pages/desktop_setting_page.dart
-          sed -i -e "s|launchUrlString('https://rustdesk.com/privacy.html')|launchUrlString('${{ env.urlLink }}/privacy.html')|" ./flutter/lib/desktop/pages/desktop_setting_page.dart
-          sed -i -e "s|const url = 'https://rustdesk.com/';|const url = '${{ env.urlLink }}';|" ./flutter/lib/mobile/pages/settings_page.dart
-          sed -i -e "s|launchUrlString('https://rustdesk.com/privacy.html')|launchUrlString('${{ env.urlLink }}/privacy.html')|" ./flutter/lib/mobile/pages/settings_page.dart
-          sed -i -e "s|https://rustdesk.com/privacy.html|${{ env.urlLink }}/privacy.html|" ./flutter/lib/desktop/pages/install_page.dart
-          sed -i -e "s|rustdesk.com|${{ env.urlLink }}|" ./res/msi/Package/License.rtf
+          $replacements = @(
+            @{ File='./build.py'; Old='Homepage: https://rustdesk.com'; New='Homepage: ${{ env.urlLink }}' },
+            @{ File='./flutter/lib/common.dart'; Old="launchUrl(Uri.parse('https://rustdesk.com'));"; New="launchUrl(Uri.parse('${{ env.urlLink }}'));" },
+            @{ File='./flutter/lib/desktop/pages/desktop_setting_page.dart'; Old="launchUrlString('https://rustdesk.com');"; New="launchUrlString('${{ env.urlLink }}');" },
+            @{ File='./flutter/lib/desktop/pages/desktop_setting_page.dart'; Old="launchUrlString('https://rustdesk.com/privacy.html')"; New="launchUrlString('${{ env.urlLink }}/privacy.html')" },
+            @{ File='./flutter/lib/mobile/pages/settings_page.dart'; Old="const url = 'https://rustdesk.com/';"; New="const url = '${{ env.urlLink }}';" },
+            @{ File='./flutter/lib/mobile/pages/settings_page.dart'; Old="launchUrlString('https://rustdesk.com/privacy.html')"; New="launchUrlString('${{ env.urlLink }}/privacy.html')" },
+            @{ File='./flutter/lib/desktop/pages/install_page.dart'; Old='https://rustdesk.com/privacy.html'; New='${{ env.urlLink }}/privacy.html' },
+            @{ File='./res/msi/Package/License.rtf'; Old='rustdesk.com'; New='${{ env.urlLink }}' }
+          )
+          foreach ($r in $replacements) {
+            if (Test-Path $r.File) {
+              $content = Get-Content $r.File -Raw
+              $content = $content.Replace($r.Old, $r.New)
+              Set-Content -Path $r.File -Value $content
+            }
+          }
 
       - name: change download link to custom
         if: env.downloadLink != 'https://rustdesk.com/download'
         continue-on-error: true
         shell: powershell
         run: |
-          sed -i -e 's|https://rustdesk.com/download|${{ env.downloadLink }}|' ./flutter/lib/desktop/pages/desktop_home_page.dart
-          sed -i -e 's|https://rustdesk.com/download|${{ env.downloadLink }}|' ./flutter/lib/mobile/pages/connection_page.dart
-          sed -i -e 's|https://rustdesk.com/download|${{ env.downloadLink }}|' ./src/ui/index.tis
+          $files = @(
+            './flutter/lib/desktop/pages/desktop_home_page.dart',
+            './flutter/lib/mobile/pages/connection_page.dart',
+            './src/ui/index.tis'
+          )
+          foreach ($file in $files) {
+            if (Test-Path $file) {
+              $content = Get-Content $file -Raw
+              $content = $content.Replace('https://rustdesk.com/download','${{ env.downloadLink }}')
+              Set-Content -Path $file -Value $content
+            }
+          }
 
       - name: set server, key, and apiserver
         continue-on-error: true
         shell: powershell
         run: |
-          sed -i -e 's|rs-ny.rustdesk.com|${{ env.server }}|' ./libs/hbb_common/src/config.rs
-          sed -i -e 's|OeVuKk5nlHiXp+APNn0Y3pC1Iwpwn44JGqrQCsWqmBw=|${{ env.key }}|' ./libs/hbb_common/src/config.rs
-          sed -i -e 's|https://admin.rustdesk.com|${{ env.apiServer }}|' ./src/common.rs
-          # ./flutter/pubspec.yaml
-          #sed -i '/intl:/a \ \ archive: ^3.6.1' ./flutter/pubspec.yaml
+          $configFile = './libs/hbb_common/src/config.rs'
+          if (Test-Path $configFile) {
+            $content = Get-Content $configFile -Raw
+            $content = $content.Replace('rs-ny.rustdesk.com','${{ env.server }}')
+            $content = $content.Replace('OeVuKk5nlHiXp+APNn0Y3pC1Iwpwn44JGqrQCsWqmBw=','${{ env.key }}')
+            Set-Content -Path $configFile -Value $content
+          }
+          $commonFile = './src/common.rs'
+          if (Test-Path $commonFile) {
+            $content = Get-Content $commonFile -Raw
+            $content = $content.Replace('https://admin.rustdesk.com','${{ env.apiServer }}')
+            Set-Content -Path $commonFile -Value $content
+          }
 
       - name: allow custom.txt
         uses: nick-fields/retry@v3
         with:
           timeout_minutes: 1
           max_attempts: 3
-          shell: pwsh
+          shell: powershell
           command: |
             Invoke-WebRequest -Uri https://raw.githubusercontent.com/bryangerlach/rdgen/refs/heads/master/.github/patches/allowCustom.py -OutFile allowCustom.py
             python allowCustom.py
-            # Remove Setup Server Tip
             Invoke-WebRequest -Uri https://raw.githubusercontent.com/bryangerlach/rdgen/refs/heads/master/.github/patches/removeSetupServerTip.diff -OutFile removeSetupServerTip.diff
-            git apply removeSetupServerTip.diff  
+            git apply removeSetupServerTip.diff
           
       - name: magick stuff
         if: ${{ env.iconlink_url != 'false' }}
@@ -269,19 +303,19 @@ jobs:
         with:
           timeout_minutes: 1
           max_attempts: 3
-          shell: pwsh
+          shell: powershell
           command: |
-            Invoke-WebRequest -Uri ${{ env.iconlink_url }}/get_png?filename=${{ env.iconlink_file }}"&"uuid=${{ env.iconlink_uuid }} -OutFile ./res/iconx.png 
-            mv ./res/icon.ico ./res/icon.ico.bak
-            mv ./res/icon.png ./res/icon.png.bak
-            mv ./res/tray-icon.ico ./res/tray-icon.ico.bak
-            mv ./res/iconx.png ./res/icon.png
-            mv ./res/32x32.png ./res/32x32.png.bak
-            mv ./res/64x64.png ./res/64x64.png.bak
-            mv ./res/128x128.png ./res/128x128.png.bak
-            mv ./res/128x128@2x.png ./res/128x128@2x.png.bak
+            Invoke-WebRequest -Uri "${{ env.iconlink_url }}/get_png?filename=${{ env.iconlink_file }}&uuid=${{ env.iconlink_uuid }}" -OutFile ./res/iconx.png
+            Move-Item ./res/icon.ico ./res/icon.ico.bak -Force
+            Move-Item ./res/icon.png ./res/icon.png.bak -Force
+            Move-Item ./res/tray-icon.ico ./res/tray-icon.ico.bak -Force
+            Move-Item ./res/iconx.png ./res/icon.png -Force
+            Move-Item ./res/32x32.png ./res/32x32.png.bak -Force
+            Move-Item ./res/64x64.png ./res/64x64.png.bak -Force
+            Move-Item ./res/128x128.png ./res/128x128.png.bak -Force
+            Move-Item ./res/128x128@2x.png ./res/128x128@2x.png.bak -Force
             magick ./res/icon.png -define icon:auto-resize=256,64,48,32,16 ./res/icon.ico
-            cp ./res/icon.ico ./res/tray-icon.ico
+            Copy-Item ./res/icon.ico ./res/tray-icon.ico -Force
             magick ./res/icon.png -resize 32x32 ./res/32x32.png
             magick ./res/icon.png -resize 64x64 ./res/64x64.png
             magick ./res/icon.png -resize 128x128 ./res/128x128.png
@@ -293,17 +327,21 @@ jobs:
         continue-on-error: true
         shell: powershell
         run: |
-          cp ./src/ui.rs ./src/ui.rs.bak
-          b64=$(base64 -w0 < ./res/icon.png)
-          perl -0777 -pe "s|iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHL[A-Za-z0-9+/=]+|$b64|g" -i.bak ./src/ui.rs
-          b64=""
+          Copy-Item ./src/ui.rs ./src/ui.rs.bak -Force
+          $b64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes('./res/icon.png'))
+          $content = Get-Content ./src/ui.rs -Raw
+          $content = [regex]::Replace($content, 'iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHL[A-Za-z0-9+/=]+', $b64)
+          Set-Content -Path ./src/ui.rs -Value $content
 
       - name: fix connection delay
         continue-on-error: true
         if: ${{ env.delayFix == 'true' }}
         shell: powershell
         run: |
-          sed -i -e 's|!key.is_empty()|false|' ./src/client.rs
+          $file = './src/client.rs'
+          $content = Get-Content $file -Raw
+          $content = $content.Replace('!key.is_empty()','false')
+          Set-Content -Path $file -Value $content
 
       - name: add cycle monitors to toolbar
         if: env.cycleMonitor == 'true'
@@ -311,7 +349,7 @@ jobs:
         with:
           timeout_minutes: 1
           max_attempts: 3
-          shell: pwsh
+          shell: powershell
           continue_on_error: true
           command: |
             Invoke-WebRequest -Uri https://raw.githubusercontent.com/bryangerlach/rdgen/refs/heads/master/.github/patches/cycle_monitor.diff -OutFile cycle_monitor.diff
@@ -323,7 +361,7 @@ jobs:
         with:
           timeout_minutes: 1
           max_attempts: 3
-          shell: pwsh
+          shell: powershell
           continue_on_error: true
           command: |
             Invoke-WebRequest -Uri https://raw.githubusercontent.com/bryangerlach/rdgen/refs/heads/master/.github/patches/xoffline.diff -OutFile xoffline.diff
@@ -333,9 +371,24 @@ jobs:
         continue-on-error: true
         if: env.removeNewVersionNotif == 'true'
         shell: powershell
-        run: | 
-          sed -i -e 's|updateUrl.isNotEmpty|false|' ./flutter/lib/desktop/pages/desktop_home_page.dart
-          sed -i '/let (request, url) =/,/Ok(())/{/Ok(())/!d}' ./src/common.rs
+        run: |
+          $file1 = './flutter/lib/desktop/pages/desktop_home_page.dart'
+          $content1 = Get-Content $file1 -Raw
+          $content1 = $content1.Replace('updateUrl.isNotEmpty','false')
+          Set-Content -Path $file1 -Value $content1
+          $file2 = './src/common.rs'
+          $lines = Get-Content $file2
+          $out = New-Object System.Collections.Generic.List[string]
+          $skip = $false
+          foreach ($line in $lines) {
+            if ($line -match 'let \(request, url\) =') { $skip = $true; continue }
+            if ($skip) {
+              if ($line -match 'Ok\(\(\)\)') { $out.Add($line); $skip = $false }
+              continue
+            }
+            $out.Add($line)
+          }
+          Set-Content -Path $file2 -Value $out
 
       - name: replace flutter icons
         if: ${{ env.iconlink_url != 'false' }}
@@ -347,13 +400,13 @@ jobs:
           flutter pub run flutter_launcher_icons
           cd ..
       - name: Debug VCPKG variables
-        shell: pwsh
+        shell: powershell
         run: |
           Write-Host "VCPKG_INSTALLATION_ROOT=$env:VCPKG_INSTALLATION_ROOT"
           Write-Host "VCPKG_ROOT=$env:VCPKG_ROOT"
 
       - name: Set VCPKG_ROOT for hwcodec
-        shell: pwsh
+        shell: powershell
         run: |
           if ($env:VCPKG_INSTALLATION_ROOT) {
             "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" | Out-File -FilePath $env:GITHUB_ENV -Append
@@ -363,7 +416,7 @@ jobs:
             throw "Could not determine VCPKG_ROOT"
           }
       - name: Build rustdesk
-        shell: pwsh
+        shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
 
@@ -415,8 +468,9 @@ jobs:
       - name: icon stuff
         if: ${{ env.iconlink_url != 'false' }}
         continue-on-error: true
+        shell: powershell
         run: |
-          mv ./rustdesk/data/flutter_assets/assets/icon.svg ./rustdesk/data/flutter_assets/assets/icon.svg.bak
+          Move-Item ./rustdesk/data/flutter_assets/assets/icon.svg ./rustdesk/data/flutter_assets/assets/icon.svg.bak -Force
           magick ./res/icon.png ./rustdesk/data/flutter_assets/assets/icon.svg
 
       - name: logo stuff
@@ -425,29 +479,26 @@ jobs:
         with:
           timeout_minutes: 1
           max_attempts: 3
-          shell: pwsh
+          shell: powershell
           continue_on_error: true
           command: |
-            Invoke-WebRequest -Uri ${{ env.logolink_url }}/get_png?filename=${{ env.logolink_file }}"&"uuid=${{ env.logolink_uuid }} -OutFile ./rustdesk/data/flutter_assets/assets/logo.png
+            Invoke-WebRequest -Uri "${{ env.logolink_url }}/get_png?filename=${{ env.logolink_file }}&uuid=${{ env.logolink_uuid }}" -OutFile ./rustdesk/data/flutter_assets/assets/logo.png
 
       - name: find Runner.res
-        # Windows: find Runner.res (compiled from ./flutter/windows/runner/Runner.rc), copy to ./Runner.res
-        # Runner.rc does not contain actual version, but Runner.res does
         continue-on-error: true
         shell: powershell
         run: |
-          runner_res=$(find . -name "Runner.res");
-          if [ "$runner_res" == "" ]; then
-            echo "Runner.res: not found";
-          else
-            echo "Runner.res: $runner_res";
-            cp $runner_res ./libs/portable/Runner.res;
-            echo "list ./libs/portable/Runner.res";
-            ls -l ./libs/portable/Runner.res;
-          fi
+          $runnerRes = Get-ChildItem -Path . -Filter 'Runner.res' -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($null -eq $runnerRes) {
+            Write-Host 'Runner.res: not found'
+          } else {
+            Write-Host "Runner.res: $($runnerRes.FullName)"
+            Copy-Item $runnerRes.FullName ./libs/portable/Runner.res -Force
+            Get-Item ./libs/portable/Runner.res | Format-List FullName,Length
+          }
 
       - name: Download RustDeskTempTopMostWindow artifacts
-        uses: actions/download-artifact@master
+        uses: actions/download-artifact@v4
         if: env.UPLOAD_ARTIFACT == 'true'
         with:
           name: topmostwindow-artifacts
@@ -455,7 +506,7 @@ jobs:
       
       - name: zip dlls
         continue-on-error: true
-        shell: pwsh
+        shell: powershell
         run: |
           Compress-Archive -Path ./rustdesk/*.dll, ./rustdesk/*.exe -DestinationPath ./rustdesk/unsigned_files.zip -CompressionLevel Fastest
 
@@ -464,7 +515,7 @@ jobs:
         shell: powershell
         run: |
           if [ ! -z "${{ secrets.SIGN_BASE_URL }}" ] && [ ! -z "${{ secrets.SIGN_API_KEY }}" ]; then
-            curl -X POST -F "file=@./rustdesk/unsigned_files.zip" \
+            curl.exe -X POST -F "file=@./rustdesk/unsigned_files.zip" \
               -H "X-API-KEY: ${{ secrets.SIGN_API_KEY }}" \
               -m 900 \
               "${{ secrets.SIGN_BASE_URL }}/sign/" -o ./rustdesk/signed_files.zip
@@ -475,7 +526,7 @@ jobs:
 
       - name: unzip dlls
         continue-on-error: true
-        shell: pwsh
+        shell: powershell
         run: |
           Expand-Archive -Path ./rustdesk/signed_files.zip -DestinationPath ./rustdesk/ -Force
           Remove-Item ./rustdesk/unsigned_files.zip
@@ -484,20 +535,21 @@ jobs:
       - name: Create custom.txt file
         shell: powershell
         run: |
-          echo -n "${{ env.custom }}" | cat > ./rustdesk/custom_.txt
+          Set-Content -Path ./rustdesk/custom_.txt -Value '${{ env.custom }}' -NoNewline
 
       - name: Build self-extracted executable
         shell: powershell
         if: env.UPLOAD_ARTIFACT == 'true'
         run: |
-          mv "./rustdesk/rustdesk.exe" "./rustdesk/${{ env.appname }}.exe" || echo "rustdesk.exe"
-          sed -i '/dpiAware/d' res/manifest.xml
-          pushd ./libs/portable
-          pip3 install -r requirements.txt
-          python3 ./generate.py -f ../../rustdesk/ -o . -e "../../rustdesk/${{ env.appname }}.exe"
-          popd
-          mkdir -p ./SignOutput
-          mv ./target/release/rustdesk-portable-packer.exe "./SignOutput/rustdesk.exe"
+          if (Test-Path './rustdesk/rustdesk.exe') { Move-Item './rustdesk/rustdesk.exe' "./rustdesk/${{ env.appname }}.exe" -Force }
+          $manifest = Get-Content res/manifest.xml | Where-Object { $_ -notmatch 'dpiAware' }
+          Set-Content -Path res/manifest.xml -Value $manifest
+          Push-Location ./libs/portable
+          python -m pip install -r requirements.txt
+          python ./generate.py -f ../../rustdesk/ -o . -e "../../rustdesk/${{ env.appname }}.exe"
+          Pop-Location
+          if (!(Test-Path './SignOutput')) { New-Item -ItemType Directory -Path './SignOutput' | Out-Null }
+          Move-Item ./target/release/rustdesk-portable-packer.exe './SignOutput/rustdesk.exe' -Force
 
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v2
@@ -505,20 +557,22 @@ jobs:
       - name: Build msi
         continue-on-error: true
         if: env.UPLOAD_ARTIFACT == 'true'
+        shell: powershell
         run: |
           $myappname = "${{ env.appname }}" -replace '\s','_'
-          cp "rustdesk/${{ env.appname }}.exe" "rustdesk/${myappname}.exe" -ErrorAction SilentlyContinue
-          pushd ./res/msi
+          Copy-Item "rustdesk/${{ env.appname }}.exe" "rustdesk/${myappname}.exe" -ErrorAction SilentlyContinue
+          Push-Location ./res/msi
           python preprocess.py --app-name "$myappname" --arp -d ../../rustdesk
           nuget restore msi.sln
           msbuild msi.sln -p:Configuration=Release -p:Platform=x64 /p:TargetVersion=Windows10
-          cp ./Package/bin/x64/Release/en-us/Package.msi ../../SignOutput/rustdesk-latest.msi
-          mv ./Package/bin/x64/Release/en-us/Package.msi ../../SignOutput/rustdesk.msi
-          sha256sum ../../SignOutput/rustdesk.msi
+          Copy-Item ./Package/bin/x64/Release/en-us/Package.msi ../../SignOutput/rustdesk-latest.msi -Force
+          Move-Item ./Package/bin/x64/Release/en-us/Package.msi ../../SignOutput/rustdesk.msi -Force
+          Get-FileHash ../../SignOutput/rustdesk.msi -Algorithm SHA256
+          Pop-Location
 
       - name: zip exe and msi
         continue-on-error: true
-        shell: pwsh
+        shell: powershell
         run: |
           Compress-Archive -Path ./SignOutput/*.exe, ./SignOutput/*.msi -DestinationPath ./SignOutput/unsigned_files.zip -CompressionLevel Fastest
 
@@ -527,7 +581,7 @@ jobs:
         shell: powershell
         run: |
           if [ ! -z "${{ secrets.SIGN_BASE_URL }}" ] && [ ! -z "${{ secrets.SIGN_API_KEY }}" ]; then
-            curl -X POST -F "file=@./SignOutput/unsigned_files.zip" \
+            curl.exe -X POST -F "file=@./SignOutput/unsigned_files.zip" \
               -H "X-API-KEY: ${{ secrets.SIGN_API_KEY }}" \
               -m 900 \
               "${{ secrets.SIGN_BASE_URL }}/sign/" -o ./SignOutput/signed_files.zip
@@ -538,20 +592,22 @@ jobs:
 
       - name: unzip exe and msi
         continue-on-error: true
-        shell: pwsh
+        shell: powershell
         run: |
           Expand-Archive -Path ./SignOutput/signed_files.zip -DestinationPath ./SignOutput/ -Force
           Remove-Item ./SignOutput/unsigned_files.zip
           Remove-Item ./SignOutput/signed_files.zip
 
       - name: rename rustdesk.exe to filename.exe
+        shell: powershell
         run: |
-          mv ./SignOutput/rustdesk.exe "./SignOutput/${{ env.filename }}.exe" || echo "rustdesk"
+          if (Test-Path './SignOutput/rustdesk.exe') { Move-Item './SignOutput/rustdesk.exe' "./SignOutput/${{ env.filename }}.exe" -Force } else { Write-Host 'rustdesk.exe not found' }
 
       - name: rename rustdesk.msi to filename.msi
         continue-on-error: true
+        shell: powershell
         run: |
-          mv ./SignOutput/rustdesk.msi "./SignOutput/${{ env.filename }}.msi" || echo "rustdesk"
+          if (Test-Path './SignOutput/rustdesk.msi') { Move-Item './SignOutput/rustdesk.msi' "./SignOutput/${{ env.filename }}.msi" -Force } else { Write-Host 'rustdesk.msi not found' }
 
       - name: send file to rdgen server
         if: ${{ env.rdgen == 'true' }}
@@ -561,8 +617,8 @@ jobs:
           max_attempts: 3
           shell: powershell
           command: |
-            curl -i -X POST -H "Content-Type: multipart/form-data" -H "Authorization: Bearer ${{ env.token }}" -F "file=@./SignOutput/${{ env.filename }}.exe" -F "uuid=${{ env.uuid }}" ${{ secrets.GENURL }}/save_custom_client
-            curl -i -X POST -H "Content-Type: multipart/form-data" -H "Authorization: Bearer ${{ env.token }}" -F "file=@./SignOutput/${{ env.filename }}.msi" -F "uuid=${{ env.uuid }}" ${{ secrets.GENURL }}/save_custom_client || true
+            curl.exe -i -X POST -H "Content-Type: multipart/form-data" -H "Authorization: Bearer ${{ env.token }}" -F "file=@./SignOutput/${{ env.filename }}.exe" -F "uuid=${{ env.uuid }}" ${{ secrets.GENURL }}/save_custom_client
+            if (Test-Path "./SignOutput/${{ env.filename }}.msi") { curl.exe -i -X POST -H "Content-Type: multipart/form-data" -H "Authorization: Bearer ${{ env.token }}" -F "file=@./SignOutput/${{ env.filename }}.msi" -F "uuid=${{ env.uuid }}" ${{ secrets.GENURL }}/save_custom_client }
 
       - name: send file to api server
         if: ${{ env.rdgen == 'false' }}
@@ -572,8 +628,8 @@ jobs:
           max_attempts: 3
           shell: powershell
           command: |
-            curl -i -X POST -H "Content-Type: multipart/form-data" -H "Authorization: Bearer ${{ env.token }}" -F "file=@./SignOutput/${{ env.filename }}.exe" ${{ env.apiServer }}/api/save_custom_client
-            curl -i -X POST -H "Content-Type: multipart/form-data" -H "Authorization: Bearer ${{ env.token }}" -F "file=@./SignOutput/${{ env.filename }}.msi" ${{ env.apiServer }}/api/save_custom_client || true
+            curl.exe -i -X POST -H "Content-Type: multipart/form-data" -H "Authorization: Bearer ${{ env.token }}" -F "file=@./SignOutput/${{ env.filename }}.exe" ${{ env.apiServer }}/api/save_custom_client
+            if (Test-Path "./SignOutput/${{ env.filename }}.msi") { curl.exe -i -X POST -H "Content-Type: multipart/form-data" -H "Authorization: Bearer ${{ env.token }}" -F "file=@./SignOutput/${{ env.filename }}.msi" ${{ env.apiServer }}/api/save_custom_client }
 
   cleanup:
     needs: [build-for-windows-flutter]
